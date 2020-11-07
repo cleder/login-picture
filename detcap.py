@@ -7,6 +7,11 @@ import cv2
 
 
 def filename():
+    """
+    Create a filename based on the username and current date and time.
+
+    The file will be stored in the home directory `~/Pictures/login-capture/`.
+    """
     username = getpass.getuser()
     now = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M")
 
@@ -18,6 +23,11 @@ def filename():
 
 # define a video capture object
 vid = cv2.VideoCapture(0)
+# set the resolution to the maximum value
+vid.set(cv2.CAP_PROP_FRAME_WIDTH, 10_000)
+vid.set(cv2.CAP_PROP_FRAME_HEIGHT, 10_000)
+
+# create an output window and set it to full screen
 cv2.namedWindow("frame", cv2.WINDOW_NORMAL)
 cv2.setWindowProperty("frame", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
 
