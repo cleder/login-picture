@@ -1,4 +1,4 @@
-# import the opencv library
+"""Capture an Image from webcam."""
 import datetime
 import getpass
 import pathlib
