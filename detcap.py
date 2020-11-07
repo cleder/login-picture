@@ -1,4 +1,4 @@
-"""Capture an Image from webcam."""
+"""Capture an Image from webcam when you press any key."""
 import datetime
 import getpass
 import pathlib
