@@ -31,10 +31,11 @@ vid.set(cv2.CAP_PROP_FRAME_HEIGHT, 10_000)
 cv2.namedWindow("frame", cv2.WINDOW_NORMAL)
 cv2.setWindowProperty("frame", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
 
-haar_face_cascade = cv2.CascadeClassifier('./venv/lib/python3.8/site-packages/cv2/data/haarcascade_frontalface_default.xml')
-
+haar_face_cascade = cv2.CascadeClassifier('data/haarcascade_frontalface_default.xml')
+w = vid.get(cv2.CAP_PROP_FRAME_WIDTH)
+h = vid.get(cv2.CAP_PROP_FRAME_HEIGHT)
+min_size = int(min(w, h) / 4)
 while True:
-
     # Capture the video frame
     # by frame
     ret, frame = vid.read()
@@ -42,7 +43,7 @@ while True:
     gray = cv2.cvtColor(flipped, cv2.COLOR_BGR2GRAY)
     detected = False
 
-    faces = haar_face_cascade.detectMultiScale(gray, 1.1, 3, minSize=(140, 140))
+    faces = haar_face_cascade.detectMultiScale(gray, 1.1, 3, minSize=(min_size, min_size))
     for x, y, w, h in faces:
         cv2.rectangle(flipped, (x, y), (x + w, y + h), (0, 255, 0), 3)
         text_size, _ = cv2.getTextSize(f'Face {w}x{h}', cv2.FONT_HERSHEY_SIMPLEX, 1, 2)
