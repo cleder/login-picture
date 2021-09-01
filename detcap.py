@@ -30,12 +30,13 @@ vid.set(cv2.CAP_PROP_FRAME_HEIGHT, 10_000)
 # create an output window and set it to full screen
 cv2.namedWindow("frame", cv2.WINDOW_NORMAL)
 cv2.setWindowProperty("frame", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+
 datapath = pathlib.Path(__file__).resolve().parents[0] / 'data' / 'haarcascade_frontalface_default.xml'
-print(datapath)
 haar_face_cascade = cv2.CascadeClassifier(str(datapath))
+
 w = vid.get(cv2.CAP_PROP_FRAME_WIDTH)
 h = vid.get(cv2.CAP_PROP_FRAME_HEIGHT)
-min_size = int(min(w, h) / 2)
+min_size = int(min(w, h) / 3)
 while True:
     # Capture the video frame
     # by frame
@@ -59,10 +60,8 @@ while True:
     if not detected:
         continue
     # press any key to exit
-    if  key > 0:
-        cv2.imwrite(filename(), frame, [cv2.IMWRITE_JPEG_QUALITY, 100])
-        break
-
+    cv2.imwrite(filename(), frame, [cv2.IMWRITE_JPEG_QUALITY, 100])
+    break
 
 # After the loop release the cap object
 vid.release()
