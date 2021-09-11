@@ -97,12 +97,14 @@ while True:
         # attempt to match each face in the input image to our known
         # encodings
         matches = face_recognition.compare_faces(
-            known_face_encodings=data, face_encoding_to_check=encoding, tolerance=0.1
+            known_face_encodings=data, face_encoding_to_check=encoding, tolerance=0.3,
         )
-    print(len(matches))
-    if not matches:
+    if not any(matches):
+        print('no match')
         continue
     # save the image once a face was recognized.
+    num_matches = len([m for m in matches if m])
+    print(f'{num_matches} matches')
     fname = filename()
     cv2.imwrite(fname, frame, [cv2.IMWRITE_JPEG_QUALITY, 100])
     # Write the encoding only when exactly one face was detected
