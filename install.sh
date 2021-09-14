@@ -8,3 +8,7 @@ pip install opencv-python
 echo '#!/usr/bin/env bash' > ~/capture-login.sh
 echo $PWD/venv/bin/python $PWD/detcap.py >> ~/capture-login.sh
 chmod +x ~/capture-login.sh
+
+echo '#!/usr/bin/env bash' > ~/recognize-login.sh
+echo $PWD/venv/bin/python $PWD/recognize_me.py >> ~/recognize-login.sh
+chmod +x ~/recognize-login.sh

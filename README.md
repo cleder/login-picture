@@ -27,11 +27,13 @@ This will open a fullscreen window and take a picture when a face is detected. T
 
 Once you have captured a decent amount of pictures you can compute face embedding vectors for your images with `python encode_images.py`.
 This will write an encoding file next to the original captured image of yor face with the extension `.cnn-encoded.pickle`.
+No embeddings will be written for pictures where more than one face was detected.
+
+## Recognize your face on login
+
 Test the recognizer with `python recognize_me.py` and see how it performs.
 It will save the recognized image along with the embedding once your face was recognized.
 You may want to fine tune the `tolerance` parameter in `recognize_me.py`.
-
-## Recognize your face on login
 
 Run `recognize-login.sh` on startup, the window will close once your face has been recognized.
 The picture will be stored with its encoding in `~/Pictures/login-capture/` and will be used for future recognitions.

@@ -55,7 +55,7 @@ haar_face_cascade = cv2.CascadeClassifier(str(datapath))
 w = vid.get(cv2.CAP_PROP_FRAME_WIDTH)
 h = vid.get(cv2.CAP_PROP_FRAME_HEIGHT)
 min_size = int(min(w, h) / 3)
-while True:
+while vid.isOpened():
     # Capture the video frame
     # by frame
     ret, frame = vid.read()
@@ -99,7 +99,7 @@ while True:
         matches = face_recognition.compare_faces(
             known_face_encodings=data,
             face_encoding_to_check=encoding,
-            tolerance=0.3,
+            tolerance=0.4,
         )
     if not any(matches):
         print("no match")
