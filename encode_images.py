@@ -1,4 +1,5 @@
 """Compute the face encodings for images."""
+# flake8: noqa
 import pathlib
 import pickle
 
@@ -12,6 +13,7 @@ jpg_files = path.glob("*.jpg")
 for picture in jpg_files:
     fname = f"{picture}.{DETECTION_METHOD}-encoded.pickle"
     if pathlib.Path(fname).exists():
+        print(f"Encoding for {picture} exists.")
         continue
     print(picture)
     image = cv2.imread(str(picture))
@@ -21,6 +23,7 @@ for picture in jpg_files:
     boxes = face_recognition.face_locations(rgb, model=DETECTION_METHOD)
     if len(boxes) != 1:
         # skip this image when multiple face where detected
+        print(f"Multiple or no faces detected in {picture}.")
         continue
     encodings = face_recognition.face_encodings(rgb, boxes, model="large")
     with open(fname, "wb") as encoded:

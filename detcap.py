@@ -1,4 +1,5 @@
 """Capture an Image from webcam and save it when a face is detected."""
+# flake8: noqa
 import datetime
 import getpass
 import pathlib
@@ -6,7 +7,7 @@ import pathlib
 import cv2
 
 
-def filename():
+def filename() -> str:
     """
     Create a filename based on the username and current date and time.
 
@@ -45,6 +46,8 @@ while True:
     # Capture the video frame
     # by frame
     ret, frame = vid.read()
+    if not ret:
+        continue
     flipped = cv2.flip(frame, 1)
     gray = cv2.cvtColor(flipped, cv2.COLOR_BGR2GRAY)
     detected = False

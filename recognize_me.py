@@ -2,13 +2,16 @@
 import datetime
 import getpass
 import pathlib
-import pickle
+import pickle  # noqa: S403
 from functools import partial
-from typing import Callable, List, Optional, Tuple
+from typing import Callable
+from typing import List
+from typing import Optional
+from typing import Tuple
 
-import cv2
+import cv2  # noqa: I900
 import face_recognition
-from numpy import ndarray
+from numpy import ndarray  # noqa: I900
 
 DETECTION_METHOD = "cnn"
 
@@ -27,7 +30,7 @@ def load_encodings(path: pathlib.Path) -> List[ndarray]:
     encodings = []
     for encoding in path.glob(f"*.jpg.{DETECTION_METHOD}-encoded.pickle"):
         with open(encoding, "rb") as f:
-            encodings.append(pickle.load(f))
+            encodings.append(pickle.load(f))  # noqa: S301
     return encodings
 
 
@@ -64,9 +67,9 @@ def get_camera_capture(ratio: Optional[float] = 3) -> Tuple[cv2.VideoCapture, in
     return vid, int(min(w, h) / ratio)
 
 
-def get_face_detector(min_size: int) -> Callable:
+def get_face_detector(min_size: int) -> Callable[[ndarray], ndarray]:
     """Create a face detection classifier and return a detection function."""
-    datapath = (
+    datapath = (  # noqa: ECE001
         pathlib.Path(__file__).resolve().parents[0]
         / "data"
         / "haarcascade_frontalface_default.xml"
@@ -80,7 +83,10 @@ def get_face_detector(min_size: int) -> Callable:
     )
 
 
-def detect_face(flipped: ndarray, detector: Callable) -> ndarray:
+def detect_face(
+    flipped: ndarray,
+    detector: Callable[[ndarray], ndarray],
+) -> Tuple[bool, ndarray]:
     """Detect faces in an image and draw a bounding box around them."""
     gray = cv2.cvtColor(flipped, cv2.COLOR_BGR2GRAY)
     detected = False
@@ -96,14 +102,20 @@ def detect_face(flipped: ndarray, detector: Callable) -> ndarray:
             cv2.FILLED,
         )
         cv2.putText(
-            flipped, f"Face {w}x{h}", (x, y), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2
+            flipped,
+            f"Face {w}x{h}",
+            (x, y),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            1,
+            (0, 0, 0),
+            2,
         )
         detected = True
 
     return detected, flipped
 
 
-def recognize_face(data: List[ndarray], frame: ndarray) -> Tuple[int, ndarray]:
+def recognize_face(data: List[ndarray], frame: ndarray) -> Tuple[int, List[ndarray]]:
     """
     Recognize a face in an image.
 
@@ -145,6 +157,8 @@ face_detector = get_face_detector(min_size)
 while vid.isOpened():
     # Capture the video frame by frame
     ret, frame = vid.read()
+    if not ret:
+        continue
     # Flip the frame so that it is the mirror view
     flipped = cv2.flip(frame, 1)
     # detect faces in the flipped frame
@@ -161,7 +175,7 @@ while vid.isOpened():
     # save the image once a face was recognized.
     save_image_and_encoding(frame, encodings)
     print(f"{matches} matches")
-    # release the camera, this will stop the video capture and exit the loop
+    # release the camera, this will stop the video capture and end the loop
     vid.release()
 
 # Destroy all the windows
