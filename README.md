@@ -44,3 +44,14 @@ The picture will be stored with its encoding in `~/Pictures/login-capture/` and 
 I used [howdy](https://github.com/boltgolt/howdy) to have a facial rcognition login.
 With this tool you can capture a picture on every login which can be used to train the howdy models.
 It may also be fun to [create a video how you look over time](https://www.youtube.com/watch?v=wAIZ36GI4p8)
+
+## Create time lapse of your pictures
+
+I recommend to use [Face-Alignment](https://github.com/SajjadAemmi/Face-Alignment) as a preprocessor.
+
+To resize your images you can use the `convert` command of imagemagick:
+```
+find /path/to/input/ -iname '*.jpg' -exec convert \{} -verbose -colorspace Gray -set filename:base "%[basename]" -resize 256\> "path/to/output/%[filename:base].jpg" \;
+```
+
+From the resized images you can create an animated GIF or a video.
