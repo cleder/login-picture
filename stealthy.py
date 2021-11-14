@@ -1,4 +1,5 @@
 """Capture an Image from webcam without use interaction."""
+# flake8: noqa
 import datetime
 import getpass
 import pathlib
