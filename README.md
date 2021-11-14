@@ -41,15 +41,17 @@ The picture will be stored with its encoding in `~/Pictures/login-capture/` and 
 
 # Background
 
-I used [howdy](https://github.com/boltgolt/howdy) to have a facial rcognition login.
+I used [howdy](https://github.com/boltgolt/howdy) to have a facial recognition login.
 With this tool you can capture a picture on every login which can be used to train the howdy models.
 It may also be fun to [create a video how you look over time](https://www.youtube.com/watch?v=wAIZ36GI4p8)
 
 ## Create time lapse of your pictures
 
-I recommend to use [Face-Alignment](https://github.com/SajjadAemmi/Face-Alignment) as a preprocessor.
+![Timelapse](https://raw.githubusercontent.com/cleder/login-picture/main/timelapse.gif)
 
-To resize your images you can use the `convert` command of imagemagick:
+I used [Face-Alignment](https://github.com/SajjadAemmi/Face-Alignment) as a preprocessor.
+
+The images were resized and converted to gray-scale with the `convert` command of imagemagick:
 ```
 find /path/to/input/ -iname '*.jpg' -exec convert \{} -verbose -colorspace Gray -set filename:base "%[basename]" -resize 256\> "path/to/output/%[filename:base].jpg" \;
 ```
