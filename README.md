@@ -1,4 +1,5 @@
-A python script that takes a picture from you webcam when it detects a face.
+A python script that takes a picture from you webcam when it detects or recognizes a face.
+![Timelapse](https://raw.githubusercontent.com/cleder/login-picture/main/timelapse.gif)
 
 # Installation
 
@@ -47,13 +48,14 @@ It may also be fun to [create a video how you look over time](https://www.youtub
 
 ## Create time lapse of your pictures
 
-![Timelapse](https://raw.githubusercontent.com/cleder/login-picture/main/timelapse.gif)
-
 I used [Face-Alignment](https://github.com/SajjadAemmi/Face-Alignment) as a preprocessor.
 
 The images were resized and converted to gray-scale with the `convert` command of imagemagick:
 ```
-find /path/to/input/ -iname '*.jpg' -exec convert \{} -verbose -colorspace Gray -set filename:base "%[basename]" -resize 256\> "path/to/output/%[filename:base].jpg" \;
+find /path/to/input/ -iname '*.jpg' -exec convert \{} -verbose -colorspace Gray -set filename:base "%[basename]" -resize 256\> "/path/to/output/%[filename:base].jpg" \;
 ```
 
-From the resized images you can create an animated GIF or a video.
+Afterwards you can create an animated GIF in the `/path/to/output/` directory with:
+```
+ convert -delay 15 -loop 0 *.jpg timelapse.gif
+```
