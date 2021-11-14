@@ -26,7 +26,7 @@ def get_image_path() -> pathlib.Path:
 
 
 def load_encodings(path: pathlib.Path) -> List[ndarray]:
-    """Load pickle file containing face encodings."""
+    """Load pickle files containing face encodings."""
     encodings = []
     for encoding in path.glob(f"*.jpg.{DETECTION_METHOD}-encoded.pickle"):
         with open(encoding, "rb") as f:
