@@ -1,12 +1,22 @@
-A python script that takes a picture from you webcam when it detects or recognizes a face.
+ python script that takes a picture from you webcam when it detects or recognizes a face.
 ![Timelapse](https://raw.githubusercontent.com/cleder/login-picture/main/timelapse.gif)
 
 # Installation
+
+## Linux
 
 Execute the installation script with `./install.sh`.
 This will create a virtual environment and install the requirements.
 It will also create an executable bash script `capture-login.sh` in your home directory.
 You can run this as a [startup script](https://www.howtogeek.com/686952/how-to-manage-startup-programs-on-ubuntu-linux/) to take your photo whenever you login.
+
+## Windows
+
+Execute the installation script with `./install.cmd`.
+This will create a virtual environment and install the requirements.
+You can call the program with `takepicture.cmd`.
+You can run this script [on startup](https://superuser.com/questions/954950/run-a-script-on-start-up-on-windows-10) to take a photo when you login.
+
 
 # Face detection
 
