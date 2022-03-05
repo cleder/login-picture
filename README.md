@@ -12,10 +12,10 @@ You can run this as a [startup script](https://www.howtogeek.com/686952/how-to-m
 
 ## Windows
 
-Execute the installation script with `./install.cmd`.
-This will create a virtual environment and install the requirements.
-You can call the program with `takepicture.cmd`.
-You can run this script [on startup](https://superuser.com/questions/954950/run-a-script-on-start-up-on-windows-10) to take a photo when you login.
+Install Python (3.10) from the Windows store.
+Open Power Shell and run `pip install opencv-python`
+Create a shortcut on your Desktop, enter `python.exe C:\path\to\directory\detcap.py` as the command to run.
+You can run this shortcut [on startup](https://superuser.com/questions/954950/run-a-script-on-start-up-on-windows-10) to take a photo when you login.
 
 
 # Face detection
