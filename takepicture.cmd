@@ -1,1 +1,1 @@
-.\venv\Scripts\python.exe detcap.py 
+.\venv\Scripts\python.exe detcap.py
