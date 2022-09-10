@@ -58,7 +58,7 @@ def create_window() -> str:
 
 def get_camera_capture(ratio: Optional[float] = 3) -> Tuple[cv2.VideoCapture, int]:
     """Define a video capture object."""
-    vid = cv2.VideoCapture(0)
+    vid = cv2.VideoCapture(4)
     # set the resolution to the maximum value
     vid.set(cv2.CAP_PROP_FRAME_WIDTH, 10_000)
     vid.set(cv2.CAP_PROP_FRAME_HEIGHT, 10_000)
