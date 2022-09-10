@@ -77,4 +77,3 @@ Alternatively you can create a video with ffmpeg:
 ```
 ffmpeg -framerate 5 -pattern_type glob -i '*.jpg' -c:v libx264 -r 30 -vf format=gray,scale=256:256 output.mp4
 ```
-<video src="https://github.com/cleder/login-picture/blob/develop/output.mp4?raw=true" width=256>
