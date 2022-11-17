@@ -77,3 +77,5 @@ Alternatively you can create a video with ffmpeg:
 ```
 ffmpeg -framerate 5 -pattern_type glob -i '*.jpg' -c:v libx264 -r 30 -vf format=gray,scale=256:256 output.mp4
 ```
+
+ffmpeg -framerate 5 -pattern_type glob -i 'me/*.jpg' -c:v libx264 -r 30 -vf format=gray,scale=256:256,normalize=blackpt=black:whitept=white:smoothing=20:independence=0.5 output.mp4

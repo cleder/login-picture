@@ -60,7 +60,7 @@ repos:
           - pep8-naming
         args: # arguments to configure flake8
           - "--max-line-length=88"
-          - "--ignore=T001,W503"
+          - "--ignore=T001,T201,W503"
   - repo: https://github.com/pycqa/isort
     rev: 5.10.1
     hooks:
