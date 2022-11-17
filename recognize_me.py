@@ -118,7 +118,8 @@ def detect_face(
 
 
 def recognize_face(
-    data: Tuple[ndarray, ...], frame: ndarray,
+    data: Tuple[ndarray, ...],
+    frame: ndarray,
 ) -> Tuple[int, List[ndarray]]:
     """
     Recognize a face in an image.
