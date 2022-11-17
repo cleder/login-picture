@@ -60,6 +60,7 @@ It may also be fun to [create a video how you look over time](https://www.youtub
 
 I used [Face-Alignment](https://github.com/SajjadAemmi/Face-Alignment) as a preprocessor.
 
+###  Animated GIF with imagemagic
 The images were resized and converted to gray-scale with the `convert` command of imagemagick:
 ```
 find /path/to/input/ -iname '*.jpg' -exec convert \{} -verbose -colorspace Gray -set filename:base "%[basename]" -resize 256\> "/path/to/output/%[filename:base].jpg" \;
@@ -69,3 +70,12 @@ Afterwards you can create an animated GIF in the `/path/to/output/` directory wi
 ```
  convert -delay 15 -loop 0 *.jpg timelapse.gif
 ```
+
+### Video with ffmpeg
+Alternatively you can create a video with ffmpeg:
+
+```
+ffmpeg -framerate 5 -pattern_type glob -i '*.jpg' -c:v libx264 -r 30 -vf format=gray,scale=256:256 output.mp4
+```
+
+ffmpeg -framerate 5 -pattern_type glob -i 'me/*.jpg' -c:v libx264 -r 30 -vf format=gray,scale=256:256,normalize=blackpt=black:whitept=white:smoothing=20:independence=0.5 output.mp4

@@ -3,15 +3,17 @@ import datetime
 import getpass
 import pathlib
 import pickle  # noqa: S403
+import random
+import time
 from functools import partial
 from typing import Callable
 from typing import List
 from typing import Optional
 from typing import Tuple
 
-import cv2  # noqa: I900
+import cv2
 import face_recognition
-from numpy import ndarray  # noqa: I900
+from numpy import ndarray
 
 DETECTION_METHOD = "cnn"
 
@@ -25,13 +27,13 @@ def get_image_path() -> pathlib.Path:
     return pathlib.Path.home() / "Pictures" / "login-capture"
 
 
-def load_encodings(path: pathlib.Path) -> List[ndarray]:
+def load_encodings(path: pathlib.Path) -> Tuple[ndarray, ...]:
     """Load pickle files containing face encodings."""
     encodings = []
     for encoding in path.glob(f"*.jpg.{DETECTION_METHOD}-encoded.pickle"):
         with open(encoding, "rb") as f:
             encodings.append(pickle.load(f))  # noqa: S301
-    return encodings
+    return tuple(encodings)
 
 
 def get_filename() -> str:
@@ -58,7 +60,7 @@ def create_window() -> str:
 
 def get_camera_capture(ratio: Optional[float] = 3) -> Tuple[cv2.VideoCapture, int]:
     """Define a video capture object."""
-    vid = cv2.VideoCapture(0)
+    vid = cv2.VideoCapture(4)
     # set the resolution to the maximum value
     vid.set(cv2.CAP_PROP_FRAME_WIDTH, 10_000)
     vid.set(cv2.CAP_PROP_FRAME_HEIGHT, 10_000)
@@ -95,27 +97,30 @@ def detect_face(
         cv2.rectangle(flipped, (x, y), (x + w, y + h), (0, 255, 0), 3)
         text_size, _ = cv2.getTextSize(f"Face {w}x{h}", cv2.FONT_HERSHEY_SIMPLEX, 1, 2)
         cv2.rectangle(
-            flipped,
-            (x, y - text_size[1]),
-            (x + text_size[0], y),
-            (255, 255, 255),
-            cv2.FILLED,
+            img=flipped,
+            pt1=(x, y - text_size[1]),
+            pt2=(x + text_size[0], y),
+            color=(255, 255, 255),
+            thickness=cv2.FILLED,
         )
         cv2.putText(
-            flipped,
-            f"Face {w}x{h}",
-            (x, y),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            1,
-            (0, 0, 0),
-            2,
+            img=flipped,
+            text=f"Face {w}x{h}",
+            org=(x, y),
+            fontFace=cv2.FONT_HERSHEY_SIMPLEX,
+            fontScale=1,
+            color=(0, 0, 0),
+            thickness=2,
         )
         detected = True
 
     return detected, flipped
 
 
-def recognize_face(data: List[ndarray], frame: ndarray) -> Tuple[int, List[ndarray]]:
+def recognize_face(
+    data: Tuple[ndarray, ...],
+    frame: ndarray,
+) -> Tuple[int, List[ndarray]]:
     """
     Recognize a face in an image.
 
@@ -126,20 +131,21 @@ def recognize_face(data: List[ndarray], frame: ndarray) -> Tuple[int, List[ndarr
     encodings = face_recognition.face_encodings(rgb, boxes, model="large")
     # loop over the facial embeddings
     matches = []
+    known_encodings = random.sample(data, min(len(data), 150))
     for encoding in encodings:
         # attempt to match each face in the input image to our known
         # encodings
         # tolerance: How much distance between faces to consider it a match.
         # Lower is more strict. 0.6 is typical best performance.
         matches = face_recognition.compare_faces(
-            known_face_encodings=data,
+            known_face_encodings=known_encodings,
             face_encoding_to_check=encoding,
             tolerance=0.4,
         )
     return len([m for m in matches if m]), encodings
 
 
-def save_image_and_encoding(frame: ndarray, encodings: List[ndarray]) -> None:
+def save_image_and_encoding(frame: ndarray, encodings: List[ndarray]) -> bool:
     """Save an image and its encoding to disk."""
     filename = get_filename()
     cv2.imwrite(filename, frame, [cv2.IMWRITE_JPEG_QUALITY, 100])
@@ -147,36 +153,52 @@ def save_image_and_encoding(frame: ndarray, encodings: List[ndarray]) -> None:
     if len(encodings) == 1:
         with open(f"{filename}.{DETECTION_METHOD}-encoded.pickle", "wb") as encoded:
             pickle.dump(encodings[0], encoded)
+        return True
+    return False
 
 
-data = load_encodings(get_image_path())
-vid, min_size = get_camera_capture()
-window_name = create_window()
-face_detector = get_face_detector(min_size)
+def main() -> None:  # noqa: CCR001
+    """Run the main program."""
+    data = load_encodings(get_image_path())
+    vid, min_size = get_camera_capture()
+    window_name = create_window()
+    face_detector = get_face_detector(min_size)
+    frame_count = 0
 
-while vid.isOpened():
-    # Capture the video frame by frame
-    ret, frame = vid.read()
-    if not ret:
-        continue
-    # Flip the frame so that it is the mirror view
-    flipped = cv2.flip(frame, 1)
-    # detect faces in the flipped frame
-    detected, flipped = detect_face(flipped, face_detector)
-    # Display the resulting frame
-    cv2.imshow(window_name, flipped)
-    key = cv2.waitKey(30)
-    if not detected:
-        continue
-    matches, encodings = recognize_face(data, frame)
-    if not matches:
-        print("No face recognized")
-        continue
-    # save the image once a face was recognized.
-    save_image_and_encoding(frame, encodings)
-    print(f"{matches} matches")
-    # release the camera, this will stop the video capture and end the loop
-    vid.release()
+    while vid.isOpened():
+        # Capture the video frame by frame
+        ret, frame = vid.read()
+        if not ret:
+            time.sleep(0.1)
+            continue
+        frame_count += 1
+        frame.flags.writeable = False
+        # Flip the frame so that it is the mirror view
+        flipped = cv2.flip(frame, 1)
+        # detect faces in the flipped frame
+        detected, flipped = detect_face(flipped, face_detector)
+        # Display the resulting frame
+        cv2.imshow(window_name, flipped)
+        cv2.waitKey(30)
+        if not detected:
+            continue
+        if frame_count < 10:
+            continue
+        matches, encodings = recognize_face(data, frame)
+        if not matches:
+            print("No face recognized")
+            continue
+        # save the image once a face was recognized.
+        if not save_image_and_encoding(frame, encodings):
+            print("Multiple faces recognized")
+            continue
+        print(f"{matches} matches")
+        # release the camera, this will stop the video capture and end the loop
+        vid.release()
 
-# Destroy all the windows
-cv2.destroyAllWindows()
+    # Destroy all the windows
+    cv2.destroyAllWindows()
+
+
+if __name__ == "__main__":
+    main()
