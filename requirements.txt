@@ -2,3 +2,4 @@ face-recognition
 numpy
 opencv-python
 pre-commit
+typer

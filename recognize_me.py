@@ -18,6 +18,7 @@ from typing import Tuple
 
 import cv2
 import face_recognition
+import typer
 from numpy import ndarray
 
 DETECTION_METHOD = "cnn"
@@ -63,9 +64,12 @@ def create_window() -> str:
     return window_name
 
 
-def get_camera_capture(ratio: Optional[float] = 3) -> Tuple[cv2.VideoCapture, int]:
+def get_camera_capture(
+    camera: int = 0,
+    ratio: Optional[float] = 3,
+) -> Tuple[cv2.VideoCapture, int]:
     """Define a video capture object."""
-    vid = cv2.VideoCapture(0)
+    vid = cv2.VideoCapture(camera)
     # set the resolution to the maximum value
     vid.set(cv2.CAP_PROP_FRAME_WIDTH, 10_000)
     vid.set(cv2.CAP_PROP_FRAME_HEIGHT, 10_000)
@@ -150,6 +154,32 @@ def recognize_face(
     return len([m for m in matches if m]), encodings, frame
 
 
+def run_recognition(
+    executor: ProcessPoolExecutor,
+    futures: List[Future[ndarray]],
+    data: Tuple[ndarray, ...],
+    frame: ndarray,
+) -> Tuple[int, List[ndarray], ndarray]:
+    """Run face recognition in a separate process."""
+    if len(futures) < cpu_count():
+        # Start a new recognition task
+        futures.append(executor.submit(recognize_face, data, frame))
+    # Check if any of the tasks are done
+    done, not_done = wait(futures, timeout=0.01, return_when=FIRST_COMPLETED)
+    recognized = False
+    for future in done:
+        matches, encodings, origin_frame = future.result()
+        if matches:
+            recognized = True
+        futures.remove(future)
+    if not recognized:
+        return 0, [], frame
+    for future in not_done:
+        future.cancel()
+    print(f"Found {matches} matches")
+    return matches, encodings, origin_frame
+
+
 def save_image_and_encoding(frame: ndarray, encodings: List[ndarray]) -> None:
     """Save an image and its encoding to disk."""
     filename = get_filename()
@@ -160,15 +190,14 @@ def save_image_and_encoding(frame: ndarray, encodings: List[ndarray]) -> None:
             pickle.dump(encodings[0], encoded)
 
 
-def main() -> None:  # noqa: CCR001
+def main(camera: int = 0) -> None:  # noqa: CCR001
     """Run the main program."""
     data = load_encodings(get_image_path())
-    vid, min_size = get_camera_capture()
+    vid, min_size = get_camera_capture(camera=camera)
     window_name = create_window()
     face_detector = get_face_detector(min_size)
     frame_count = 0
     futures: List[Future[ndarray]] = []
-    recognized = False
     with ProcessPoolExecutor(max_workers=max(cpu_count() // 2, 1)) as executor:
         while vid.isOpened():
             # Capture the video frame by frame
@@ -190,31 +219,21 @@ def main() -> None:  # noqa: CCR001
                 continue
             if not detected:
                 continue
-            if len(futures) < cpu_count():
-                # Start a new recognition task
-                futures.append(executor.submit(recognize_face, data, frame))
-            # Check if any of the tasks are done
-            done, not_done = wait(futures, timeout=0.01, return_when=FIRST_COMPLETED)
-            for future in done:
-                matches, encodings, origin_frame = future.result()
-                if matches:
-                    print(f"Found {matches} matches")
-                    recognized = True
-                futures.remove(future)
-            if not recognized:
+            matches, encodings, origin_frame = run_recognition(
+                executor,
+                futures,
+                data,
+                frame,
+            )
+            if not matches:
                 continue
-            for future in not_done:
-                future.cancel()
-            cv2.imshow(window_name, origin_frame)
             # save the image once a face was recognized.
             save_image_and_encoding(origin_frame, encodings)
-            print(f"{matches} matches")
             # release the camera, this will stop the video capture and end the loop
-            cv2.waitKey(3000)
             vid.release()
 
     cv2.destroyAllWindows()
 
 
 if __name__ == "__main__":
-    main()
+    typer.run(main)
