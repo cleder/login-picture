@@ -190,7 +190,34 @@ def save_image_and_encoding(frame: ndarray, encodings: List[ndarray]) -> None:
             pickle.dump(encodings[0], encoded)
 
 
-def main(camera: int = 0) -> None:  # noqa: CCR001
+def capture_and_display(
+    vid: cv2.VideoCapture,
+    window_name: str,
+    detector: Callable[[ndarray], ndarray],
+    frame_count: int,
+) -> Tuple[bool, int, ndarray]:
+    """Capture a frame from the camera and display it."""
+    # Capture the video frame by frame
+    ret, frame = vid.read()
+    if not ret:
+        time.sleep(0.1)
+        return False, frame_count, []
+    frame_count += 1
+    frame.flags.writeable = False
+    # Flip the frame so that it is the mirror view
+    flipped = cv2.flip(frame, 1)
+    # detect faces in the flipped frame
+    detected, flipped = detect_face(flipped, detector)
+    # Display the resulting frame
+    cv2.imshow(window_name, flipped)
+    cv2.waitKey(30)
+    if frame_count < 10:
+        # Skip the first 10 frames to allow the camera to adjust
+        detected = False
+    return detected, frame_count, frame
+
+
+def main(camera: int = 0) -> None:
     """Run the main program."""
     data = load_encodings(get_image_path())
     vid, min_size = get_camera_capture(camera=camera)
@@ -200,23 +227,12 @@ def main(camera: int = 0) -> None:  # noqa: CCR001
     futures: List[Future[ndarray]] = []
     with ProcessPoolExecutor(max_workers=max(cpu_count() // 2, 1)) as executor:
         while vid.isOpened():
-            # Capture the video frame by frame
-            ret, frame = vid.read()
-            if not ret:
-                time.sleep(0.1)
-                continue
-            frame_count += 1
-            frame.flags.writeable = False
-            # Flip the frame so that it is the mirror view
-            flipped = cv2.flip(frame, 1)
-            # detect faces in the flipped frame
-            detected, flipped = detect_face(flipped, face_detector)
-            # Display the resulting frame
-            cv2.imshow(window_name, flipped)
-            cv2.waitKey(30)
-            if frame_count < 10:
-                # Skip the first 10 frames to allow the camera to adjust
-                continue
+            detected, frame_count, frame = capture_and_display(
+                vid=vid,
+                window_name=window_name,
+                detector=face_detector,
+                frame_count=frame_count,
+            )
             if not detected:
                 continue
             matches, encodings, origin_frame = run_recognition(
