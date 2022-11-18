@@ -3,7 +3,6 @@ import datetime
 import getpass
 import pathlib
 import pickle  # noqa: S403
-import random
 import time
 from concurrent.futures import FIRST_COMPLETED
 from concurrent.futures import Future
@@ -140,14 +139,12 @@ def recognize_face(
     encodings = face_recognition.face_encodings(rgb, boxes, model="large")
     # loop over the facial embeddings
     matches = []
-    known_encodings = random.sample(data, min(len(data), 150))
     for encoding in encodings:
-        # attempt to match each face in the input image to our known
-        # encodings
+        # attempt to match each face in the input image to our known encodings
         # tolerance: How much distance between faces to consider it a match.
         # Lower is more strict. 0.6 is typical best performance.
         matches = face_recognition.compare_faces(
-            known_face_encodings=known_encodings,
+            known_face_encodings=data,
             face_encoding_to_check=encoding,
             tolerance=0.4,
         )
