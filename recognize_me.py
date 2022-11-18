@@ -5,7 +5,12 @@ import pathlib
 import pickle  # noqa: S403
 import random
 import time
+from concurrent.futures import FIRST_COMPLETED
+from concurrent.futures import Future
+from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import wait
 from functools import partial
+from multiprocessing import cpu_count
 from typing import Callable
 from typing import List
 from typing import Optional
@@ -60,7 +65,7 @@ def create_window() -> str:
 
 def get_camera_capture(ratio: Optional[float] = 3) -> Tuple[cv2.VideoCapture, int]:
     """Define a video capture object."""
-    vid = cv2.VideoCapture(4)
+    vid = cv2.VideoCapture(0)
     # set the resolution to the maximum value
     vid.set(cv2.CAP_PROP_FRAME_WIDTH, 10_000)
     vid.set(cv2.CAP_PROP_FRAME_HEIGHT, 10_000)
@@ -120,7 +125,7 @@ def detect_face(
 def recognize_face(
     data: Tuple[ndarray, ...],
     frame: ndarray,
-) -> Tuple[int, List[ndarray]]:
+) -> Tuple[int, List[ndarray], ndarray]:
     """
     Recognize a face in an image.
 
@@ -142,10 +147,10 @@ def recognize_face(
             face_encoding_to_check=encoding,
             tolerance=0.4,
         )
-    return len([m for m in matches if m]), encodings
+    return len([m for m in matches if m]), encodings, frame
 
 
-def save_image_and_encoding(frame: ndarray, encodings: List[ndarray]) -> bool:
+def save_image_and_encoding(frame: ndarray, encodings: List[ndarray]) -> None:
     """Save an image and its encoding to disk."""
     filename = get_filename()
     cv2.imwrite(filename, frame, [cv2.IMWRITE_JPEG_QUALITY, 100])
@@ -153,8 +158,6 @@ def save_image_and_encoding(frame: ndarray, encodings: List[ndarray]) -> bool:
     if len(encodings) == 1:
         with open(f"{filename}.{DETECTION_METHOD}-encoded.pickle", "wb") as encoded:
             pickle.dump(encodings[0], encoded)
-        return True
-    return False
 
 
 def main() -> None:  # noqa: CCR001
@@ -164,39 +167,52 @@ def main() -> None:  # noqa: CCR001
     window_name = create_window()
     face_detector = get_face_detector(min_size)
     frame_count = 0
+    futures: List[Future[ndarray]] = []
+    recognized = False
+    with ProcessPoolExecutor(max_workers=max(cpu_count() // 2, 1)) as executor:
+        while vid.isOpened():
+            # Capture the video frame by frame
+            ret, frame = vid.read()
+            if not ret:
+                time.sleep(0.1)
+                continue
+            frame_count += 1
+            frame.flags.writeable = False
+            # Flip the frame so that it is the mirror view
+            flipped = cv2.flip(frame, 1)
+            # detect faces in the flipped frame
+            detected, flipped = detect_face(flipped, face_detector)
+            # Display the resulting frame
+            cv2.imshow(window_name, flipped)
+            cv2.waitKey(30)
+            if frame_count < 10:
+                # Skip the first 10 frames to allow the camera to adjust
+                continue
+            if not detected:
+                continue
+            if len(futures) < cpu_count():
+                # Start a new recognition task
+                futures.append(executor.submit(recognize_face, data, frame))
+            # Check if any of the tasks are done
+            done, not_done = wait(futures, timeout=0.01, return_when=FIRST_COMPLETED)
+            for future in done:
+                matches, encodings, origin_frame = future.result()
+                if matches:
+                    print(f"Found {matches} matches")
+                    recognized = True
+                futures.remove(future)
+            if not recognized:
+                continue
+            for future in not_done:
+                future.cancel()
+            cv2.imshow(window_name, origin_frame)
+            # save the image once a face was recognized.
+            save_image_and_encoding(origin_frame, encodings)
+            print(f"{matches} matches")
+            # release the camera, this will stop the video capture and end the loop
+            cv2.waitKey(3000)
+            vid.release()
 
-    while vid.isOpened():
-        # Capture the video frame by frame
-        ret, frame = vid.read()
-        if not ret:
-            time.sleep(0.1)
-            continue
-        frame_count += 1
-        frame.flags.writeable = False
-        # Flip the frame so that it is the mirror view
-        flipped = cv2.flip(frame, 1)
-        # detect faces in the flipped frame
-        detected, flipped = detect_face(flipped, face_detector)
-        # Display the resulting frame
-        cv2.imshow(window_name, flipped)
-        cv2.waitKey(30)
-        if not detected:
-            continue
-        if frame_count < 10:
-            continue
-        matches, encodings = recognize_face(data, frame)
-        if not matches:
-            print("No face recognized")
-            continue
-        # save the image once a face was recognized.
-        if not save_image_and_encoding(frame, encodings):
-            print("Multiple faces recognized")
-            continue
-        print(f"{matches} matches")
-        # release the camera, this will stop the video capture and end the loop
-        vid.release()
-
-    # Destroy all the windows
     cv2.destroyAllWindows()
 
 
