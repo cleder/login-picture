@@ -4,12 +4,10 @@ import getpass
 import pathlib
 import pickle  # noqa: S403
 import time
-from concurrent.futures import FIRST_COMPLETED
-from concurrent.futures import Future
-from concurrent.futures import ProcessPoolExecutor
-from concurrent.futures import wait
 from functools import partial
 from multiprocessing import cpu_count
+from multiprocessing.pool import AsyncResult
+from multiprocessing.pool import Pool
 from typing import Callable
 from typing import List
 from typing import Optional
@@ -120,7 +118,7 @@ def detect_face(
             color=(0, 0, 0),
             thickness=2,
         )
-        detected = True
+        detected = len(faces) == 1
 
     return detected, flipped
 
@@ -151,30 +149,35 @@ def recognize_face(
     return len([m for m in matches if m]), encodings, frame
 
 
+def get_max_workers() -> int:
+    """
+    Get the maximum number of workers for the ProcessPoolExecutor.
+
+    Only use half of the reported CPUs x86_64 CPUs report 2 threads per core.
+    The upper limit is 32 workers.
+    """
+    return min(max(cpu_count() // 2, 1), 32)
+
+
 def run_recognition(
-    executor: ProcessPoolExecutor,
-    futures: List[Future[ndarray]],
-    data: Tuple[ndarray, ...],
+    pool: Pool,
+    futures: List[AsyncResult],
+    known_encodings: Tuple[ndarray, ...],
     frame: ndarray,
 ) -> Tuple[int, List[ndarray], ndarray]:
     """Run face recognition in a separate process."""
-    if len(futures) < cpu_count():
+    if len(futures) < get_max_workers() + 1:
         # Start a new recognition task
-        futures.append(executor.submit(recognize_face, data, frame))
+        futures.append(pool.apply_async(recognize_face, (known_encodings, frame)))
     # Check if any of the tasks are done
-    done, not_done = wait(futures, timeout=0.01, return_when=FIRST_COMPLETED)
-    recognized = False
-    for future in done:
-        matches, encodings, origin_frame = future.result()
-        if matches:
-            recognized = True
-        futures.remove(future)
-    if not recognized:
-        return 0, [], frame
-    for future in not_done:
-        future.cancel()
-    print(f"Found {matches} matches")
-    return matches, encodings, origin_frame
+    for result in futures:
+        if result.ready():
+            matches, encodings, origin_frame = result.get()
+            futures.remove(result)
+            if matches:
+                print(f"Found {matches} matches")
+                return matches, encodings, origin_frame
+    return 0, [], frame
 
 
 def save_image_and_encoding(frame: ndarray, encodings: List[ndarray]) -> None:
@@ -221,8 +224,8 @@ def main(camera: int = 0) -> None:
     window_name = create_window()
     face_detector = get_face_detector(min_size)
     frame_count = 0
-    futures: List[Future[ndarray]] = []
-    with ProcessPoolExecutor(max_workers=max(cpu_count() // 2, 1)) as executor:
+    futures: List[AsyncResult] = []
+    with Pool(processes=get_max_workers()) as pool:
         while vid.isOpened():
             detected, frame_count, frame = capture_and_display(
                 vid=vid,
@@ -233,10 +236,10 @@ def main(camera: int = 0) -> None:
             if not detected:
                 continue
             matches, encodings, origin_frame = run_recognition(
-                executor,
-                futures,
-                data,
-                frame,
+                pool=pool,
+                futures=futures,
+                known_encodings=data,
+                frame=frame,
             )
             if not matches:
                 continue

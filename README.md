@@ -49,6 +49,8 @@ You may want to fine tune the `tolerance` parameter in `recognize_me.py`.
 Run `recognize-login.sh` on startup, the window will close once your face has been recognized.
 The picture will be stored with its encoding in `~/Pictures/login-capture/` and will be used for future recognitions.
 
+The face recognition will run in separate processes, to not slow down the main window.
+
 
 # Background
 
@@ -77,5 +79,3 @@ Alternatively you can create a video with ffmpeg:
 ```
 ffmpeg -framerate 5 -pattern_type glob -i '*.jpg' -c:v libx264 -r 30 -vf format=gray,scale=256:256 output.mp4
 ```
-
-ffmpeg -framerate 5 -pattern_type glob -i 'me/*.jpg' -c:v libx264 -r 30 -vf format=gray,scale=256:256,normalize=blackpt=black:whitept=white:smoothing=20:independence=0.5 output.mp4
