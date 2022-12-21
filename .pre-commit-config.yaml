@@ -69,7 +69,7 @@ repos:
           - pep8-naming
         args: # arguments to configure flake8
           - "--max-line-length=88"
-          - "--ignore=T001,T201,W503"
+          - "--ignore=T001,T201,W503,IF100"
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev:  v0.990
     hooks:

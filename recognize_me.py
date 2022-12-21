@@ -10,7 +10,6 @@ from multiprocessing.pool import AsyncResult
 from multiprocessing.pool import Pool
 from typing import Callable
 from typing import List
-from typing import Optional
 from typing import Tuple
 
 import cv2
@@ -63,15 +62,15 @@ def create_window() -> str:
 
 def get_camera_capture(
     camera: int = 0,
-    ratio: Optional[float] = 3,
+    ratio: float = 3,
 ) -> Tuple[cv2.VideoCapture, int]:
     """Define a video capture object."""
     vid = cv2.VideoCapture(camera)
     # set the resolution to the maximum value
     vid.set(cv2.CAP_PROP_FRAME_WIDTH, 10_000)
     vid.set(cv2.CAP_PROP_FRAME_HEIGHT, 10_000)
-    w = vid.get(cv2.CAP_PROP_FRAME_WIDTH)
-    h = vid.get(cv2.CAP_PROP_FRAME_HEIGHT)
+    w: int = vid.get(cv2.CAP_PROP_FRAME_WIDTH)
+    h: int = vid.get(cv2.CAP_PROP_FRAME_HEIGHT)
     return vid, int(min(w, h) / ratio)
 
 
@@ -94,13 +93,21 @@ def get_face_detector(min_size: int) -> Callable[[ndarray], ndarray]:
 def detect_face(
     flipped: ndarray,
     detector: Callable[[ndarray], ndarray],
+    skip: bool = False,
 ) -> Tuple[bool, ndarray]:
     """Detect faces in an image and draw a bounding box around them."""
     gray = cv2.cvtColor(flipped, cv2.COLOR_BGR2GRAY)
     detected = False
     faces = detector(gray)
+    rectangle_color = (0, 0, 255) if skip else (0, 255, 0)
     for x, y, w, h in faces:
-        cv2.rectangle(flipped, (x, y), (x + w, y + h), (0, 255, 0), 3)
+        cv2.rectangle(
+            img=flipped,
+            pt1=(x, y),
+            pt2=(x + w, y + h),
+            color=rectangle_color,
+            thickness=3,
+        )
         text_size, _ = cv2.getTextSize(f"Face {w}x{h}", cv2.FONT_HERSHEY_SIMPLEX, 1, 2)
         cv2.rectangle(
             img=flipped,
@@ -207,14 +214,15 @@ def capture_and_display(
     # Flip the frame so that it is the mirror view
     flipped = cv2.flip(frame, 1)
     # detect faces in the flipped frame
-    detected, flipped = detect_face(flipped, detector)
+    skip = False
+    if frame_count < 10:
+        # Skip the first 10 frames to allow the camera to adjust
+        skip = True
+    detected, flipped = detect_face(flipped, detector, skip)
     # Display the resulting frame
     cv2.imshow(window_name, flipped)
     cv2.waitKey(30)
-    if frame_count < 10:
-        # Skip the first 10 frames to allow the camera to adjust
-        detected = False
-    return detected, frame_count, frame
+    return detected and not skip, frame_count, frame
 
 
 def main(camera: int = 0) -> None:
