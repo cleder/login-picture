@@ -62,7 +62,7 @@ repos:
           - "--max-line-length=88"
           - "--ignore=T001,T201,W503"
   - repo: https://github.com/pycqa/isort
-    rev: v5.11.3
+    rev: 5.11.4
     hooks:
       - id: isort
   - repo: https://github.com/pre-commit/mirrors-mypy
