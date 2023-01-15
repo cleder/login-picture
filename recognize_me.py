@@ -163,7 +163,7 @@ def get_max_workers() -> int:
     Only use half of the reported CPUs x86_64 CPUs report 2 threads per core.
     The upper limit is 32 workers.
     """
-    return min(max(cpu_count() // 2, 1), 32)
+    return min(max((cpu_count() // 2) - 1, 1), 32)
 
 
 def run_recognition(
