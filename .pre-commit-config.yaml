@@ -20,7 +20,7 @@ repos:
       - id: requirements-txt-fixer
       - id: trailing-whitespace
   - repo: https://github.com/psf/black
-    rev: 23.11.0
+    rev: 23.12.0
     hooks:
       - id: black
   - repo: https://github.com/PyCQA/flake8
@@ -62,7 +62,7 @@ repos:
           - "--max-line-length=88"
           - "--ignore=T001,T201,W503"
   - repo: https://github.com/pycqa/isort
-    rev: 5.13.0
+    rev: 5.13.2
     hooks:
       - id: isort
   - repo: https://github.com/pre-commit/mirrors-mypy
