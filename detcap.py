@@ -1,4 +1,5 @@
 """Capture an Image from webcam and save it when a face is detected."""
+
 # flake8: noqa
 import datetime
 import getpass

@@ -1,4 +1,5 @@
 """Compute the face encodings for images."""
+
 # flake8: noqa
 import pathlib
 import pickle
