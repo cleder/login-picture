@@ -1,7 +1,7 @@
 ---
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       - id: check-added-large-files
       - id: check-docstring-first
@@ -66,7 +66,7 @@ repos:
     hooks:
       - id: isort
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev:  v1.17.0
+    rev:  v1.17.1
     hooks:
       - id: mypy
   - repo: https://github.com/Lucas-C/pre-commit-hooks-markup
